@@ -26,15 +26,27 @@ export const getProducts = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+const getNextProductId = async () => {
+    try {
+        const result = await pool.query('SELECT MAX(id) FROM PRODUCTS');
+        const maxId = result.rows[0].max;
+        return maxId ? maxId + 1 : 1;
+    } catch (err) {
+        throw err;
+    }
+};
 
 export const createProduct = async (req, res) => {
-    const { name, category, price, image_path, description } = req.body;
+    const { name, category, price, image, description } = req.body;
 
     try {
+        const id = await getNextProductId();
+
         const result = await pool.query(
-            'INSERT INTO PRODUCTS (name, category, price, image_path, description) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [name, category, price, image_path, description]
+            'INSERT INTO PRODUCTS (id, name, category, price, image, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [id, name, category, price, image, description]
         );
+
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error(err);
